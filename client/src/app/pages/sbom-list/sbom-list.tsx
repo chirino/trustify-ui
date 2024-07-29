@@ -5,6 +5,7 @@ import { AxiosError, AxiosResponse } from "axios";
 
 import {
   Button,
+  ButtonVariant,
   DescriptionList,
   DescriptionListDescription,
   DescriptionListGroup,
@@ -32,6 +33,7 @@ import {
 
 import { TablePersistenceKeyPrefixes } from "@app/Constants";
 import { SBOM } from "@app/api/models";
+import { ConfirmDialog } from "@app/components/ConfirmDialog";
 import { EditLabelsModal } from "@app/components/EditLabelsModal";
 import { FilterToolbar, FilterType } from "@app/components/FilterToolbar";
 import { LabelsAsList } from "@app/components/LabelsAsList";
@@ -67,7 +69,7 @@ export const SbomList: React.FC = () => {
   const { uploads, handleUpload, handleRemoveUpload } = useUploadSBOM();
 
   // Actions that each row can trigger
-  type RowAction = "editLabels";
+  type RowAction = "editLabels" | "delete";
   const [selectedRowAction, setSelectedRowAction] =
     React.useState<RowAction | null>(null);
   const [selectedRow, setSelectedRow] = React.useState<SBOM | null>(null);
@@ -89,7 +91,24 @@ export const SbomList: React.FC = () => {
     onUpdateLabelsError
   );
 
-  const deleteSBOMByIdMutation = useDeleteSBOMByIdMutation();
+  const onDeleteSbomSuccess = (sbom: SBOM) => {
+    pushNotification({
+      title: `SBOM ${sbom.name} deleted!`,
+      variant: "success",
+    });
+  };
+
+  const onDeleteSbomError = (_error: AxiosError, sbom: SBOM) => {
+    pushNotification({
+      title: `Error while deleting the SBOM ${sbom.name}.`,
+      variant: "danger",
+    });
+  };
+
+  const { mutate: deleteSbom } = useDeleteSBOMByIdMutation(
+    onDeleteSbomSuccess,
+    onDeleteSbomError
+  );
 
   const execSaveLabels = (row: SBOM, labels: { [key: string]: string }) => {
     updateSbomLabels({ ...row, labels });
@@ -126,7 +145,6 @@ export const SbomList: React.FC = () => {
     result: { data: advisories, total: totalItemCount },
     isFetching,
     fetchError,
-    refetch,
   } = useFetchSBOMs(
     getHubRequestParams({
       ...tableControlState,
@@ -289,7 +307,9 @@ export const SbomList: React.FC = () => {
                               },
                               {
                                 title: "Delete",
-                                onClick: () => deleteSBOMByIdMutation.mutate(item.id),
+                                onClick: () => {
+                                  prepareActionOnRow("delete", item);
+                                },
                               },
                             ]}
                           />
@@ -384,6 +404,25 @@ export const SbomList: React.FC = () => {
           onClose={() => setSelectedRowAction(null)}
         />
       )}
+
+      <ConfirmDialog
+        title={`Delete ${selectedRow?.name}`}
+        titleIconVariant="warning"
+        isOpen={selectedRowAction === "delete"}
+        message="Are you sure you want to delete this SBOM? This action cannot be undone."
+        aria-label="SBOM delete"
+        confirmBtnVariant={ButtonVariant.danger}
+        confirmBtnLabel="Delete"
+        cancelBtnLabel="Cancel"
+        onCancel={() => setSelectedRowAction(null)}
+        onClose={() => setSelectedRowAction(null)}
+        onConfirm={() => {
+          if (selectedRow) {
+            deleteSbom(selectedRow);
+          }
+          setSelectedRowAction(null);
+        }}
+      />
     </>
   );
 };

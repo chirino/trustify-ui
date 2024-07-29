@@ -3,17 +3,15 @@ import { AxiosError } from "axios";
 
 import { HubRequestParams, SBOM } from "@app/api/models";
 import {
+  deleteSBOMById,
   getSBOMById,
   getSBOMSourceById,
   getSBOMs,
   getSBOMsByPackageId,
   updateSbomLabels,
   uploadSbom,
-  deleteSBOMById,
 } from "@app/api/rest";
 import { useUpload } from "@app/hooks/useUpload";
-import {NotificationsContext} from "@app/components/NotificationsContext";
-import React from "react";
 
 export const SBOMsQueryKey = "sboms";
 
@@ -53,21 +51,18 @@ export const useFetchSBOMById = (id?: number | string) => {
   };
 };
 
-export const useDeleteSBOMByIdMutation = () => {
+export const useDeleteSBOMByIdMutation = (
+  onSuccess: (sbom: SBOM) => void,
+  onError: (err: AxiosError, sbom: SBOM) => void
+) => {
   const queryClient = useQueryClient();
-  const {pushNotification} = React.useContext(NotificationsContext);
-
   return useMutation({
-    mutationFn: (id: number | string) => deleteSBOMById(id),
-    onSuccess: (_res, id) => {
-      queryClient.invalidateQueries({queryKey: [SBOMsQueryKey, id]});
+    mutationFn: (sbom: SBOM) => deleteSBOMById(sbom.id),
+    onSuccess: (_res, sbom) => {
+      onSuccess(sbom);
+      queryClient.invalidateQueries({ queryKey: [SBOMsQueryKey] });
     },
-    onError: (err: AxiosError, _payload: number | string) => {
-      pushNotification({
-        title: "Error while deleting SBOM",
-        variant: "danger",
-      });
-    }
+    onError,
   });
 };
 
