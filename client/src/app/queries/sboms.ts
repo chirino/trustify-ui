@@ -51,7 +51,7 @@ export const useFetchSBOMById = (id?: number | string) => {
   };
 };
 
-export const useDeleteSBOMByIdMutation = (
+export const useDeleteSBOMMutation = (
   onSuccess: (sbom: SBOM) => void,
   onError: (err: AxiosError, sbom: SBOM) => void
 ) => {

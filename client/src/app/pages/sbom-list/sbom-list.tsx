@@ -55,7 +55,7 @@ import {
 import { useDownload } from "@app/hooks/useDownload";
 import { useSelectionState } from "@app/hooks/useSelectionState";
 import {
-  useDeleteSBOMByIdMutation,
+  useDeleteSBOMMutation,
   useFetchSBOMs,
   useUpdateSbomLabelsMutation,
   useUploadSBOM,
@@ -105,7 +105,7 @@ export const SbomList: React.FC = () => {
     });
   };
 
-  const { mutate: deleteSbom } = useDeleteSBOMByIdMutation(
+  const { mutate: deleteSbom } = useDeleteSBOMMutation(
     onDeleteSbomSuccess,
     onDeleteSbomError
   );
